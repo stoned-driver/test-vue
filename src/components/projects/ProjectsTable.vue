@@ -3,7 +3,7 @@ import BaseBadge from '@/components/ui/BaseBadge.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import { useColumnResize } from '@/composables/useColumnResize'
 import { useTableSort } from '@/composables/useTableSort'
-import type { ProjectListItem } from '@/types'
+import { ProjectStatus, type ProjectListItem } from '@/types'
 import { formatDate } from '@/utils/date'
 import { PROJECT_STATUS_LABELS } from '@/utils/labels'
 
@@ -17,6 +17,9 @@ const emit = defineEmits<{
   open: [id: number]
   create: []
   reset: []
+  edit: [project: ProjectListItem]
+  archive: [project: ProjectListItem]
+  remove: [project: ProjectListItem]
 }>()
 
 interface Column {
@@ -54,6 +57,7 @@ const { isResizing, startResize, getWidthStyle } = useColumnResize('projects', {
     <table class="table">
       <colgroup>
         <col v-for="column in columns" :key="column.key" :style="getWidthStyle(column.key)" />
+        <col class="table__actions-col" />
       </colgroup>
       <thead>
         <tr>
@@ -92,6 +96,7 @@ const { isResizing, startResize, getWidthStyle } = useColumnResize('projects', {
               @pointerdown="startResize(column.key, $event)"
             />
           </th>
+          <th class="table__th" aria-label="Дії" />
         </tr>
       </thead>
       <tbody>
@@ -102,6 +107,7 @@ const { isResizing, startResize, getWidthStyle } = useColumnResize('projects', {
             <td><BaseSkeleton width="36px" /></td>
             <td><BaseSkeleton width="86px" height="22px" pill /></td>
             <td><BaseSkeleton width="92px" /></td>
+            <td />
           </tr>
         </template>
         <template v-else-if="sortedItems.length">
@@ -124,10 +130,69 @@ const { isResizing, startResize, getWidthStyle } = useColumnResize('projects', {
               </BaseBadge>
             </td>
             <td class="table__date">{{ formatDate(project.createdAt) }}</td>
+            <td class="table__actions" @click.stop>
+              <button
+                type="button"
+                class="table__action"
+                :aria-label="`Редагувати «${project.name}»`"
+                title="Редагувати"
+                @click="emit('edit', project)"
+              >
+                <svg viewBox="0 0 14 14" aria-hidden="true">
+                  <path
+                    d="m9.6 2.2 2.2 2.2-6.8 6.8-2.6.4.4-2.6 6.8-6.8Z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="table__action"
+                :aria-label="
+                  project.status === ProjectStatus.Active
+                    ? `Архівувати «${project.name}»`
+                    : `Відновити «${project.name}»`
+                "
+                :title="project.status === ProjectStatus.Active ? 'Архівувати' : 'Відновити'"
+                @click="emit('archive', project)"
+              >
+                <svg viewBox="0 0 14 14" aria-hidden="true">
+                  <path
+                    d="M2 4h10M3 4v7a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4M5.5 7h3"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="table__action table__action--danger"
+                :aria-label="`Видалити «${project.name}»`"
+                title="Видалити"
+                @click="emit('remove', project)"
+              >
+                <svg viewBox="0 0 14 14" aria-hidden="true">
+                  <path
+                    d="M2.5 4h9M5 4V2.8h4V4m-6.2 0 .5 7.4a1 1 0 0 0 1 .8h4.4a1 1 0 0 0 1-.8l.5-7.4"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            </td>
           </tr>
         </template>
         <tr v-else>
-          <td :colspan="columns.length">
+          <td :colspan="columns.length + 1">
             <div class="table__empty">
               <p class="table__empty-title">
                 {{ filtered ? 'Нічого не знайдено' : 'Поки що немає проектів' }}
@@ -165,9 +230,58 @@ const { isResizing, startResize, getWidthStyle } = useColumnResize('projects', {
 
 .table {
   width: 100%;
-  min-width: 720px;
+  min-width: 760px;
   table-layout: fixed;
   border-collapse: collapse;
+
+  &__actions-col {
+    width: 108px;
+  }
+
+  &__actions {
+    text-align: right;
+    white-space: nowrap;
+    cursor: default;
+  }
+
+  &__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: $radius-sm;
+    color: $color-ink-faint;
+    opacity: 0;
+    transition:
+      opacity $duration-fast $ease-out,
+      background $duration-fast $ease-out,
+      color $duration-fast $ease-out;
+    @include focus-ring;
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    &:hover {
+      background: $color-surface-soft;
+      color: $color-ink;
+    }
+
+    &--danger:hover {
+      background: rgba($color-danger, 0.1);
+      color: $color-danger;
+    }
+
+    &:focus-visible {
+      opacity: 1;
+    }
+  }
+
+  &__row:hover &__action {
+    opacity: 1;
+  }
 
   &__th {
     position: relative;

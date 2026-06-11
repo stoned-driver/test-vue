@@ -5,10 +5,11 @@ import ProjectFormModal from '@/components/projects/ProjectFormModal.vue'
 import ProjectsFilters from '@/components/projects/ProjectsFilters.vue'
 import ProjectsTable from '@/components/projects/ProjectsTable.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { useFilters } from '@/composables/useFilters'
 import { useProjectsStore } from '@/stores/projects.store'
 import { useTasksStore } from '@/stores/tasks.store'
-import { ProjectStatus, type ProjectListItem } from '@/types'
+import { ProjectStatus, type Project, type ProjectListItem } from '@/types'
 import { pluralizeUk } from '@/utils/labels'
 
 const router = useRouter()
@@ -44,7 +45,32 @@ const { filters, filteredItems, isFiltered, resetFilters } = useFilters<
   persistKey: 'planer:projects:filters',
 })
 
-const createOpen = ref(false)
+const formOpen = ref(false)
+const editingProject = ref<Project | null>(null)
+const deletingProject = ref<Project | null>(null)
+
+function openCreate(): void {
+  editingProject.value = null
+  formOpen.value = true
+}
+
+function openEdit(project: Project): void {
+  editingProject.value = project
+  formOpen.value = true
+}
+
+function toggleArchive(project: Project): void {
+  void projectsStore.updateProject(project.id, {
+    status: project.status === ProjectStatus.Active ? ProjectStatus.Archived : ProjectStatus.Active,
+  })
+}
+
+async function confirmRemove(): Promise<void> {
+  if (!deletingProject.value) return
+  const id = deletingProject.value.id
+  deletingProject.value = null
+  await projectsStore.removeProject(id)
+}
 
 const metaLabel = computed(() => {
   const projectCount = projectsStore.projects.length
@@ -67,7 +93,7 @@ function openProject(id: number): void {
         <h1 class="page-head__title">Проекти</h1>
         <p class="page-head__meta">{{ metaLabel }}</p>
       </div>
-      <BaseButton @click="createOpen = true">
+      <BaseButton @click="openCreate">
         <svg class="page-head__plus" viewBox="0 0 14 14" aria-hidden="true">
           <path
             d="M7 2v10M2 7h10"
@@ -92,11 +118,22 @@ function openProject(id: number): void {
       :loading="projectsStore.isLoading"
       :filtered="isFiltered"
       @open="openProject"
-      @create="createOpen = true"
+      @create="openCreate"
       @reset="resetFilters"
+      @edit="openEdit"
+      @archive="toggleArchive"
+      @remove="deletingProject = $event"
     />
 
-    <ProjectFormModal :open="createOpen" @close="createOpen = false" />
+    <ProjectFormModal :open="formOpen" :project="editingProject" @close="formOpen = false" />
+
+    <ConfirmDialog
+      :open="Boolean(deletingProject)"
+      title="Видалити проект?"
+      :message="`«${deletingProject?.name ?? ''}» і всі його завдання буде видалено назавжди.`"
+      @confirm="confirmRemove"
+      @close="deletingProject = null"
+    />
   </section>
 </template>
 
