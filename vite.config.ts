@@ -15,4 +15,11 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        additionalData: `@use '@/assets/styles/tokens' as *;\n@use '@/assets/styles/mixins' as *;\n`,
+      },
+    },
+  },
 })
