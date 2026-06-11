@@ -6,6 +6,8 @@ interface UseTableSortOptions<T> {
   initial?: SortState<T> | null
   /** Ключ localStorage — сортування переживає перезавантаження */
   persistKey?: string
+  /** Власні компаратори для колонок, де природне порівняння не пасує (напр., ранг статусу) */
+  comparators?: Partial<Record<keyof T, (a: T, b: T) => number>>
 }
 
 interface UseTableSortReturn<T> {
@@ -42,7 +44,10 @@ export function useTableSort<T extends object>(
     const state = sortState.value
     if (!state) return list
     const factor = state.direction === 'asc' ? 1 : -1
-    return list.sort((a, b) => factor * compareValues(a[state.key], b[state.key]))
+    const custom = options.comparators?.[state.key]
+    return list.sort(
+      (a, b) => factor * (custom ? custom(a, b) : compareValues(a[state.key], b[state.key])),
+    )
   })
 
   function toggleSort(key: keyof T): void {

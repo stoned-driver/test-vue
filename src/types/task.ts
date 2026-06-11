@@ -4,6 +4,15 @@ export enum TaskStatus {
   Done = 'done',
 }
 
+/** Порядок колонок канбану та логічний ранг для сортування за статусом */
+export const TASK_STATUSES = [TaskStatus.Todo, TaskStatus.InProgress, TaskStatus.Done] as const
+
+export const TASK_STATUS_RANK: Record<TaskStatus, number> = {
+  [TaskStatus.Todo]: 0,
+  [TaskStatus.InProgress]: 1,
+  [TaskStatus.Done]: 2,
+}
+
 export interface Task {
   id: number
   projectId: number
