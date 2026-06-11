@@ -34,6 +34,42 @@
   white-space: nowrap;
 }
 
+@mixin field-control {
+  width: 100%;
+  padding: space(2) space(3);
+  background: $color-surface;
+  border: 1px solid $color-border-strong;
+  border-radius: $radius-md;
+  font-size: $font-size-base;
+  color: $color-ink;
+  transition:
+    border-color $duration-fast $ease-out,
+    box-shadow $duration-fast $ease-out;
+
+  &::placeholder {
+    color: $color-ink-faint;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: rgba(61, 54, 46, 0.28);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $color-accent;
+    box-shadow: 0 0 0 3px rgba($color-accent, 0.16);
+  }
+}
+
+@mixin field-control-invalid {
+  border-color: $color-danger;
+
+  &:focus {
+    border-color: $color-danger;
+    box-shadow: 0 0 0 3px rgba($color-danger, 0.14);
+  }
+}
+
 $breakpoint-md: 768px;
 $breakpoint-lg: 1024px;
 
