@@ -17,6 +17,7 @@ const emit = defineEmits<{
   drop: [status: TaskStatus, event: TaskDragEvent]
   dragstart: []
   dragend: []
+  edit: [task: Task]
 }>()
 
 /**
@@ -58,6 +59,7 @@ watch(
         :task="task"
         :data-task-id="task.id"
         class="column__card"
+        @click="emit('edit', task)"
       />
     </VueDraggable>
     <p v-if="!tasks.length" class="column__empty">Перетягніть завдання сюди</p>

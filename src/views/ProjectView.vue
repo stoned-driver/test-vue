@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import TaskFormModal from '@/components/tasks/TaskFormModal.vue'
 import TasksFilters from '@/components/tasks/TasksFilters.vue'
 import TasksTable from '@/components/tasks/TasksTable.vue'
 import ViewSwitcher, { type ProjectViewMode } from '@/components/tasks/ViewSwitcher.vue'
 import KanbanBoard from '@/components/tasks/kanban/KanbanBoard.vue'
 import BaseBadge from '@/components/ui/BaseBadge.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import { useFilters } from '@/composables/useFilters'
 import { usePersistedState } from '@/composables/usePersistedState'
 import { assigneesService } from '@/api/services/assignees.service'
@@ -81,6 +83,19 @@ const metaLabel = computed(() => {
 const notFound = computed(
   () => !project.value && !projectsStore.isLoading && projectsStore.status !== 'idle',
 )
+
+const taskFormOpen = ref(false)
+const editingTask = ref<Task | null>(null)
+
+function openCreateTask(): void {
+  editingTask.value = null
+  taskFormOpen.value = true
+}
+
+function openEditTask(task: Task): void {
+  editingTask.value = task
+  taskFormOpen.value = true
+}
 </script>
 
 <template>
@@ -123,7 +138,20 @@ const notFound = computed(
           </p>
           <p class="page-head__meta">{{ metaLabel }}</p>
         </div>
-        <ViewSwitcher v-model="viewMode" />
+        <div class="page-head__actions">
+          <ViewSwitcher v-model="viewMode" />
+          <BaseButton @click="openCreateTask">
+            <svg class="page-head__plus" viewBox="0 0 14 14" aria-hidden="true">
+              <path
+                d="M7 2v10M2 7h10"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+            Додати завдання
+          </BaseButton>
+        </div>
       </div>
 
       <TasksFilters
@@ -140,9 +168,18 @@ const notFound = computed(
           :tasks="filteredItems"
           :loading="tasksStore.isLoading"
           :drag-enabled="!isFiltered"
+          @edit="openEditTask"
         />
-        <KanbanBoard v-else :grouped="grouped" :drag-enabled="!isFiltered" />
+        <KanbanBoard v-else :grouped="grouped" :drag-enabled="!isFiltered" @edit="openEditTask" />
       </Transition>
+
+      <TaskFormModal
+        :open="taskFormOpen"
+        :project-id="projectId"
+        :task="editingTask"
+        :assignees="assignees"
+        @close="taskFormOpen = false"
+      />
     </template>
   </section>
 </template>
@@ -198,6 +235,18 @@ const notFound = computed(
     color: $color-ink-faint;
     font-size: $font-size-sm;
     font-variant-numeric: tabular-nums;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: space(3);
+    flex: none;
+  }
+
+  &__plus {
+    width: 13px;
+    height: 13px;
   }
 
   @include below($breakpoint-md) {

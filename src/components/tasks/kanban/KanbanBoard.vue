@@ -8,6 +8,8 @@ defineProps<{
   dragEnabled: boolean
 }>()
 
+const emit = defineEmits<{ edit: [task: Task] }>()
+
 const { isDragging, onDragStart, onDragEnd, onBoardDrop } = useTaskDrag()
 </script>
 
@@ -23,6 +25,7 @@ const { isDragging, onDragStart, onDragEnd, onBoardDrop } = useTaskDrag()
       @dragstart="onDragStart"
       @dragend="onDragEnd"
       @drop="onBoardDrop"
+      @edit="emit('edit', $event)"
     />
   </div>
 </template>

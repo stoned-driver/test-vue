@@ -17,6 +17,8 @@ const props = defineProps<{
   dragEnabled: boolean
 }>()
 
+const emit = defineEmits<{ edit: [task: Task] }>()
+
 interface Column {
   key: 'id' | 'title' | 'assignee' | 'status' | 'dueDate'
   label: string
@@ -168,6 +170,9 @@ function initials(name: string): string {
           :data-task-id="task.id"
           class="table__row"
           :class="{ 'table__row--done': task.status === 'done' }"
+          tabindex="0"
+          @click="emit('edit', task)"
+          @keydown.enter="emit('edit', task)"
         >
           <td class="table__handle">
             <span
@@ -328,7 +333,9 @@ function initials(name: string): string {
   }
 
   &__row {
+    cursor: pointer;
     transition: background $duration-fast $ease-out;
+    @include focus-ring;
 
     &:hover {
       background: rgba($color-surface-soft, 0.6);
