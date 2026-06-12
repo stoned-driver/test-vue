@@ -13,7 +13,6 @@ export const useProjectsStore = defineStore('projects', () => {
   const toasts = useToastsStore()
 
   const isLoading = computed(() => status.value === 'loading')
-  const hasError = computed(() => status.value === 'error')
 
   function projectById(id: number): Project | undefined {
     return projects.value.find((project) => project.id === id)
@@ -74,7 +73,6 @@ export const useProjectsStore = defineStore('projects', () => {
     projects,
     status,
     isLoading,
-    hasError,
     projectById,
     fetchProjects,
     createProject,

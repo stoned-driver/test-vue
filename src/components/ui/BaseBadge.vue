@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import type { ProjectStatus, TaskStatus } from '@/types'
+
 defineProps<{
-  tone: 'todo' | 'in_progress' | 'done' | 'active' | 'archived'
+  tone: TaskStatus | ProjectStatus
 }>()
 </script>
 
