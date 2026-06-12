@@ -193,11 +193,13 @@ export const mockRoutes: MockRoute[] = [
       if (wantsStatus && !isTaskStatus(record.status)) {
         throw new MockHttpError(400, 'Невідомий статус завдання')
       }
-      if (wantsStatus || record.order !== undefined) {
-        const toStatus = wantsStatus && isTaskStatus(record.status) ? record.status : task.status
+      const newStatus = wantsStatus && isTaskStatus(record.status) ? record.status : task.status
+      // Переставляємо лише за явним order або РЕАЛЬНОЮ зміною статусу,
+      // інакше редагування назви/виконавця зсувало б завдання в кінець
+      if (typeof record.order === 'number' || newStatus !== task.status) {
         const fallbackIndex = projectTasksSorted(db.tasks, task.projectId).length
         const toIndex = typeof record.order === 'number' ? record.order : fallbackIndex
-        db.tasks = applyTaskInsert(db.tasks, id, toStatus, toIndex)
+        db.tasks = applyTaskInsert(db.tasks, id, newStatus, toIndex)
       }
 
       writeDb(db)

@@ -10,7 +10,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { useProjectsStore } from '@/stores/projects.store'
 import { useTasksStore } from '@/stores/tasks.store'
 import { TASK_STATUSES, TaskStatus, type Task } from '@/types'
-import { taskFormSchema } from '@/types/forms'
+import { createTaskFormSchema } from '@/types/forms'
 import { todayIso } from '@/utils/date'
 import { TASK_STATUS_LABELS } from '@/utils/labels'
 
@@ -29,8 +29,17 @@ const tasksStore = useTasksStore()
 const isEdit = computed(() => Boolean(props.task))
 const confirmOpen = ref(false)
 
+/** При редагуванні дозволяємо лишити початкову (навіть минулу) дату */
+const minDueDate = computed(() => {
+  const today = todayIso()
+  if (props.task && props.task.dueDate < today) return props.task.dueDate
+  return today
+})
+
+const validationSchema = computed(() => toTypedSchema(createTaskFormSchema(minDueDate.value)))
+
 const { errors, handleSubmit, defineField, resetForm, setValues, isSubmitting } = useForm({
-  validationSchema: toTypedSchema(taskFormSchema),
+  validationSchema,
 })
 
 const [title, titleAttrs] = defineField('title')
@@ -139,7 +148,7 @@ async function removeTask(): Promise<void> {
           v-bind="dueDateAttrs"
           label="Термін виконання"
           type="date"
-          :min="todayIso()"
+          :min="minDueDate"
           :error="errors.dueDate"
         />
       </div>

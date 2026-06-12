@@ -9,7 +9,6 @@ import BaseBadge from '@/components/ui/BaseBadge.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { useFilters } from '@/composables/useFilters'
 import { usePersistedState } from '@/composables/usePersistedState'
-import { assigneesService } from '@/api/services/assignees.service'
 import { useProjectsStore } from '@/stores/projects.store'
 import { useTasksStore } from '@/stores/tasks.store'
 import { TaskStatus, type Task } from '@/types'
@@ -21,18 +20,9 @@ const projectId = computed(() => Number(props.id))
 const projectsStore = useProjectsStore()
 const tasksStore = useTasksStore()
 
-const assignees = ref<string[]>([])
-
 onMounted(() => {
   if (!projectsStore.projects.length) void projectsStore.fetchProjects()
-  assigneesService
-    .list()
-    .then((list) => {
-      assignees.value = list
-    })
-    .catch(() => {
-      // список виконавців не критичний — фільтр просто лишиться коротшим
-    })
+  void tasksStore.fetchAssignees()
 })
 
 // immediate-вотчер замість onMounted: компонент перевикористовується
@@ -167,7 +157,7 @@ function openEditTask(task: Task): void {
       <TasksFilters
         v-model:assignee="filters.assignee"
         v-model:status="filters.status"
-        :assignees="assignees"
+        :assignees="tasksStore.assignees"
         :filtered="isFiltered"
         @reset="resetFilters"
       />
@@ -180,14 +170,20 @@ function openEditTask(task: Task): void {
           :drag-enabled="!isFiltered"
           @edit="openEditTask"
         />
-        <KanbanBoard v-else :grouped="grouped" :drag-enabled="!isFiltered" @edit="openEditTask" />
+        <KanbanBoard
+          v-else
+          :grouped="grouped"
+          :drag-enabled="!isFiltered"
+          :loading="tasksStore.isLoading"
+          @edit="openEditTask"
+        />
       </Transition>
 
       <TaskFormModal
         :open="taskFormOpen"
         :project-id="projectId"
         :task="editingTask"
-        :assignees="assignees"
+        :assignees="tasksStore.assignees"
         @close="taskFormOpen = false"
       />
     </template>

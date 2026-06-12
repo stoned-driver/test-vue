@@ -1,10 +1,10 @@
 import { ProjectStatus, TaskStatus, type Project, type Task } from '@/types'
+import { toIsoDate } from '@/utils/date'
 import type { MockDb } from './db'
 
 const DAY_MS = 86_400_000
 
-const isoDateInDays = (days: number): string =>
-  new Date(Date.now() + days * DAY_MS).toISOString().slice(0, 10)
+const isoDateInDays = (days: number): string => toIsoDate(new Date(Date.now() + days * DAY_MS))
 
 const isoDaysAgo = (days: number): string => new Date(Date.now() - days * DAY_MS).toISOString()
 

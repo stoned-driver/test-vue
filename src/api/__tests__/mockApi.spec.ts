@@ -38,6 +38,45 @@ describe('mock API adapter', () => {
     })
   })
 
+  it('редагування полів без зміни статусу не змінює порядок', async () => {
+    const before = await api.get<Task[]>('/tasks', { params: { projectId: 1 } })
+    const first = [...before].sort((a, b) => a.order - b.order)[0]
+    expect(first).toBeDefined()
+    if (!first) return
+
+    await api.put<Task>(`/tasks/${first.id}`, {
+      title: 'Перейменоване завдання',
+      status: first.status,
+      dueDate: first.dueDate,
+      assignee: first.assignee,
+    })
+
+    const after = await api.get<Task[]>('/tasks', { params: { projectId: 1 } })
+    const orderById = new Map(before.map((task) => [task.id, task.order]))
+    for (const task of after) {
+      expect(task.order).toBe(orderById.get(task.id))
+    }
+  })
+
+  it('зміна статусу без явного order ставить завдання в кінець', async () => {
+    const before = await api.get<Task[]>('/tasks', { params: { projectId: 1 } })
+    const todo = before
+      .filter((task) => task.status === TaskStatus.Todo)
+      .sort((a, b) => a.order - b.order)[0]
+    expect(todo).toBeDefined()
+    if (!todo) return
+
+    await api.put<Task>(`/tasks/${todo.id}`, { status: TaskStatus.Done })
+
+    const after = await api.get<Task[]>('/tasks', { params: { projectId: 1 } })
+    const moved = after.find((task) => task.id === todo.id)
+    expect(moved?.status).toBe(TaskStatus.Done)
+    expect(moved?.order).toBe(after.length - 1)
+
+    const orders = after.sort((a, b) => a.order - b.order).map((task) => task.order)
+    expect(orders).toEqual(orders.map((_, index) => index))
+  })
+
   it('переміщення завдання змінює статус і перенумеровує порядок', async () => {
     const all = await api.get<Task[]>('/tasks', { params: { projectId: 1 } })
     const todo = all.filter((task) => task.status === TaskStatus.Todo)

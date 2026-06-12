@@ -1,3 +1,5 @@
+import { TaskStatus, type Task } from '@/types'
+
 const fullDateFormatter = new Intl.DateTimeFormat('uk-UA', {
   day: 'numeric',
   month: 'short',
@@ -26,12 +28,24 @@ export function formatDayMonth(iso: string): string {
   return date ? dayMonthFormatter.format(date) : '—'
 }
 
+/** Дата у форматі YYYY-MM-DD у ЛОКАЛЬНОМУ часовому поясі (toISOString дав би UTC-зсув) */
+export function toIsoDate(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${date.getFullYear()}-${month}-${day}`
+}
+
 /** Сьогодні у форматі YYYY-MM-DD (межа для дедлайнів) */
 export function todayIso(): string {
-  return new Date().toISOString().slice(0, 10)
+  return toIsoDate(new Date())
 }
 
 /** Дедлайн у минулому (порівняння по днях) */
 export function isOverdue(isoDate: string): boolean {
   return isoDate < todayIso()
+}
+
+/** Прострочене завдання: дедлайн минув і воно ще не виконане */
+export function isTaskOverdue(task: Pick<Task, 'status' | 'dueDate'>): boolean {
+  return task.status !== TaskStatus.Done && isOverdue(task.dueDate)
 }

@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { toUserMessage } from '@/api/errors'
+import { assigneesService } from '@/api/services/assignees.service'
 import { tasksService } from '@/api/services/tasks.service'
 import { TaskStatus } from '@/types'
 import type { CreateTaskDto, RequestStatus, Task, UpdateTaskDto } from '@/types'
@@ -10,11 +11,11 @@ import { useToastsStore } from './toasts.store'
 export const useTasksStore = defineStore('tasks', () => {
   const tasks = ref<Task[]>([])
   const status = ref<RequestStatus>('idle')
+  const assignees = ref<string[]>([])
 
   const toasts = useToastsStore()
 
   const isLoading = computed(() => status.value === 'loading')
-  const hasError = computed(() => status.value === 'error')
 
   /** Реактивний лічильник завдань для таблиці проектів. */
   const countByProject = computed<Map<number, number>>(() => {
@@ -40,14 +41,13 @@ export const useTasksStore = defineStore('tasks', () => {
     return projectTasksSorted(tasks.value, projectId)
   }
 
-  function tasksByStatus(projectId: number): Record<TaskStatus, Task[]> {
-    const grouped: Record<TaskStatus, Task[]> = {
-      [TaskStatus.Todo]: [],
-      [TaskStatus.InProgress]: [],
-      [TaskStatus.Done]: [],
+  /** Довідник виконавців для фільтра і форми (вибір зі списку) */
+  async function fetchAssignees(): Promise<void> {
+    try {
+      assignees.value = await assigneesService.list()
+    } catch {
+      // довідник не критичний — фільтр і форма просто лишаться коротшими
     }
-    for (const task of tasksOfProject(projectId)) grouped[task.status].push(task)
-    return grouped
   }
 
   /**
@@ -83,8 +83,15 @@ export const useTasksStore = defineStore('tasks', () => {
 
   async function updateTask(id: number, dto: UpdateTaskDto): Promise<boolean> {
     try {
+      const previous = tasks.value.find((task) => task.id === id)
       const updated = await tasksService.update(id, dto)
       tasks.value = tasks.value.map((task) => (task.id === id ? updated : task))
+      // Зміна статусу через форму переносить завдання в кінець цільової
+      // колонки на «сервері» — повторюємо ту саму перенумерацію локально,
+      // щоб порядок сусідів не розійшовся з мок-БД
+      if (previous && previous.status !== updated.status) {
+        tasks.value = applyTaskInsert(tasks.value, id, updated.status, Number.MAX_SAFE_INTEGER)
+      }
       toasts.success('Зміни збережено')
       return true
     } catch (error) {
@@ -147,12 +154,12 @@ export const useTasksStore = defineStore('tasks', () => {
   return {
     tasks,
     status,
+    assignees,
     isLoading,
-    hasError,
     countByProject,
     statusDistribution,
     tasksOfProject,
-    tasksByStatus,
+    fetchAssignees,
     fetchTasks,
     createTask,
     updateTask,
