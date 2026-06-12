@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import ProjectFormModal from '@/components/projects/ProjectFormModal.vue'
 import ProjectsFilters from '@/components/projects/ProjectsFilters.vue'
 import ProjectsTable from '@/components/projects/ProjectsTable.vue'
+import TasksStatusChart from '@/components/tasks/TasksStatusChart.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { useFilters } from '@/composables/useFilters'
@@ -105,6 +106,8 @@ function openProject(id: number): void {
         Додати проект
       </BaseButton>
     </div>
+
+    <TasksStatusChart :distribution="tasksStore.statusDistribution" />
 
     <ProjectsFilters
       v-model:search="filters.search"
