@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppHeader from '@/components/layout/AppHeader.vue'
+import AppToaster from '@/components/ui/AppToaster.vue'
 </script>
 
 <template>
@@ -8,6 +9,7 @@ import AppHeader from '@/components/layout/AppHeader.vue'
     <main class="app__main">
       <RouterView />
     </main>
+    <AppToaster />
   </div>
 </template>
 
