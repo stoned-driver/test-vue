@@ -54,11 +54,12 @@ watch(
       @update="emit('drop', status, $event)"
     >
       <TaskCard
-        v-for="task in localTasks"
+        v-for="(task, index) in localTasks"
         :key="task.id"
         :task="task"
         :data-task-id="task.id"
         class="column__card"
+        :style="{ '--i': index }"
         @click="emit('edit', task)"
       />
     </VueDraggable>
@@ -127,6 +128,8 @@ watch(
 
   &__card {
     touch-action: none;
+    animation: card-in $duration-base $ease-out both;
+    animation-delay: min(calc(var(--i, 0) * 40ms), 240ms);
   }
 
   &__empty {
@@ -156,6 +159,13 @@ watch(
     box-shadow: $shadow-lifted;
     cursor: grabbing;
     opacity: 1 !important;
+  }
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
   }
 }
 </style>
