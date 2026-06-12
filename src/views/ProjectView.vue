@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import TaskFormModal from '@/components/tasks/TaskFormModal.vue'
 import TasksFilters from '@/components/tasks/TasksFilters.vue'
 import TasksTable from '@/components/tasks/TasksTable.vue'
@@ -25,7 +25,6 @@ const assignees = ref<string[]>([])
 
 onMounted(() => {
   if (!projectsStore.projects.length) void projectsStore.fetchProjects()
-  void tasksStore.fetchTasks(projectId.value)
   assigneesService
     .list()
     .then((list) => {
@@ -35,6 +34,17 @@ onMounted(() => {
       // список виконавців не критичний — фільтр просто лишиться коротшим
     })
 })
+
+// immediate-вотчер замість onMounted: компонент перевикористовується
+// роутером при зміні :id, тож завдання треба перезавантажувати
+// і при навігації між проектами, не лише при монтуванні
+watch(
+  projectId,
+  (id) => {
+    void tasksStore.fetchTasks(id)
+  },
+  { immediate: true },
+)
 
 const project = computed(() => projectsStore.projectById(projectId.value))
 const projectTasks = computed(() => tasksStore.tasksOfProject(projectId.value))
