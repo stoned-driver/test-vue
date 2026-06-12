@@ -11,6 +11,15 @@ export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   [TaskStatus.Done]: 'Done',
 }
 
+/** Ініціали з імені: «Олена Савчук» → «ОС» */
+export function initialsOf(name: string): string {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word.charAt(0).toUpperCase())
+    .join('')
+}
+
 /** Українська плюралізація: pluralizeUk(3, ['проект', 'проекти', 'проектів']) */
 export function pluralizeUk(count: number, forms: [string, string, string]): string {
   const mod10 = count % 10

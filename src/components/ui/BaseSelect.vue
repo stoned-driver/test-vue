@@ -29,7 +29,7 @@ const id = useId()
         class="field__control"
         :class="{ 'field__control--invalid': Boolean(error) }"
         :aria-invalid="error ? true : undefined"
-        :aria-errormessage="error ? `${id}-error` : undefined"
+        :aria-describedby="error ? `${id}-error` : undefined"
       >
         <option v-for="option in options" :key="option.value" :value="option.value">
           {{ option.label }}
@@ -46,7 +46,7 @@ const id = useId()
         />
       </svg>
     </span>
-    <p v-if="error" :id="`${id}-error`" class="field__error">{{ error }}</p>
+    <p v-if="error" :id="`${id}-error`" class="field__error" role="alert">{{ error }}</p>
   </div>
 </template>
 

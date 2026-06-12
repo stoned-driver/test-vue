@@ -43,7 +43,7 @@ const { sortedItems, toggleSort, sortDirection, ariaSort } = useTableSort<Projec
   },
 )
 
-const { isResizing, startResize, getWidthStyle } = useColumnResize('projects', {
+const { isResizing, startResize, nudgeWidth, getWidthStyle } = useColumnResize('projects', {
   id: 72,
   name: 340,
   taskCount: 130,
@@ -92,8 +92,11 @@ const { isResizing, startResize, getWidthStyle } = useColumnResize('projects', {
               class="table__resize"
               role="separator"
               aria-orientation="vertical"
+              tabindex="0"
               :aria-label="`Змінити ширину колонки «${column.label}»`"
               @pointerdown="startResize(column.key, $event)"
+              @keydown.left.prevent="nudgeWidth(column.key, -16)"
+              @keydown.right.prevent="nudgeWidth(column.key, 16)"
             />
           </th>
           <th class="table__th" aria-label="Дії" />
@@ -358,8 +361,13 @@ const { isResizing, startResize, getWidthStyle } = useColumnResize('projects', {
       transition: background $duration-fast $ease-out;
     }
 
-    &:hover::after {
-      background: $color-accent;
+    &:focus-visible {
+      outline: none;
+    }
+
+    &:hover::after,
+    &:focus-visible::after {
+      background: $color-accent-strong;
     }
   }
 

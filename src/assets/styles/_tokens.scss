@@ -7,13 +7,16 @@ $color-surface: #ffffff;
 $color-surface-soft: #f6efe7;
 $color-surface-muted: #f1eae2;
 
+// Відтінки чорнила підібрані під WCAG AA на кремових поверхнях:
+// ink-soft ≈ 6.5:1, ink-faint ≈ 4.5:1 на $color-bg
 $color-ink: #3d362e;
-$color-ink-soft: #8a8276;
-$color-ink-faint: #a09887;
+$color-ink-soft: #5f574a;
+$color-ink-faint: #797061;
 
 $color-accent: #ff6b5e;
 $color-accent-strong: #f2554a;
-$color-on-accent: #ffffff;
+// Темне чорнило замість білого: ≥4.5:1 і на акценті, і на ховері
+$color-on-accent: #2b1c18;
 
 $color-danger: #d8503f;
 $color-success: #2fa963;
@@ -49,8 +52,8 @@ $project-status-colors: (
   ),
   'archived': (
     tint: #ece7df,
-    ink: #8a8276,
-    dot: #b3aa9c,
+    ink: #6e6557,
+    dot: #9c9283,
   ),
 );
 

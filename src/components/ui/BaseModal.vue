@@ -1,5 +1,14 @@
+<script lang="ts">
+/** Стек відкритих модалок (рівень модуля — спільний для всіх інстансів):
+ *  Esc і скрол-лок мають працювати лише для верхньої модалки */
+const modalStack: symbol[] = []
+
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+</script>
+
 <script setup lang="ts">
-import { onBeforeUnmount, useId, watch } from 'vue'
+import { nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
 
 const props = defineProps<{
   open: boolean
@@ -9,23 +18,76 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [] }>()
 
 const titleId = useId()
+const panel = ref<HTMLElement | null>(null)
+const stackId = Symbol('modal')
+
+let previouslyFocused: HTMLElement | null = null
+
+function focusables(): HTMLElement[] {
+  return panel.value ? [...panel.value.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)] : []
+}
+
+function isTopModal(): boolean {
+  return modalStack[modalStack.length - 1] === stackId
+}
 
 function onKeydown(event: KeyboardEvent): void {
-  if (event.key === 'Escape') emit('close')
+  if (!isTopModal()) return
+  if (event.key === 'Escape') {
+    event.stopPropagation()
+    emit('close')
+    return
+  }
+  if (event.key === 'Tab') {
+    const items = focusables()
+    const first = items[0]
+    const last = items[items.length - 1]
+    if (!first || !last) return
+    const active = document.activeElement
+    if (event.shiftKey && (active === first || !panel.value?.contains(active))) {
+      event.preventDefault()
+      last.focus()
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault()
+      first.focus()
+    }
+  }
+}
+
+function openModal(): void {
+  previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  modalStack.push(stackId)
+  document.body.style.overflow = 'hidden'
+  document.addEventListener('keydown', onKeydown, true)
+  void nextTick(() => {
+    // спершу — перший елемент тіла модалки (поле форми), не кнопка «Закрити»
+    const bodyFocusable = panel.value?.querySelector<HTMLElement>(
+      `.modal__body :is(${FOCUSABLE_SELECTOR})`,
+    )
+    const target = bodyFocusable ?? focusables()[0] ?? panel.value
+    target?.focus()
+  })
+}
+
+function closeModal(): void {
+  const index = modalStack.indexOf(stackId)
+  if (index !== -1) modalStack.splice(index, 1)
+  if (modalStack.length === 0) document.body.style.overflow = ''
+  document.removeEventListener('keydown', onKeydown, true)
+  previouslyFocused?.focus()
+  previouslyFocused = null
 }
 
 watch(
   () => props.open,
   (open) => {
-    document.body.style.overflow = open ? 'hidden' : ''
-    if (open) document.addEventListener('keydown', onKeydown)
-    else document.removeEventListener('keydown', onKeydown)
+    if (open) openModal()
+    else closeModal()
   },
 )
 
 onBeforeUnmount(() => {
-  document.body.style.overflow = ''
-  document.removeEventListener('keydown', onKeydown)
+  if (props.open) closeModal()
 })
 </script>
 
@@ -33,7 +95,14 @@ onBeforeUnmount(() => {
   <Teleport to="body">
     <Transition name="modal">
       <div v-if="open" class="modal" @click.self="emit('close')">
-        <div class="modal__panel" role="dialog" aria-modal="true" :aria-labelledby="titleId">
+        <div
+          ref="panel"
+          class="modal__panel"
+          role="dialog"
+          aria-modal="true"
+          :aria-labelledby="titleId"
+          tabindex="-1"
+        >
           <header class="modal__head">
             <h2 :id="titleId" class="modal__title">{{ title }}</h2>
             <button class="modal__close" type="button" aria-label="Закрити" @click="emit('close')">
@@ -73,6 +142,7 @@ onBeforeUnmount(() => {
     border-radius: $radius-lg;
     box-shadow: $shadow-pop;
     padding: space(6);
+    outline: none;
   }
 
   &__head {

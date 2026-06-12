@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { VueDraggable } from 'vue-draggable-plus'
+import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import type { TaskDragEvent } from '@/composables/useTaskDrag'
 import type { Task, TaskStatus } from '@/types'
 import { TASK_STATUS_LABELS } from '@/utils/labels'
@@ -11,6 +12,7 @@ const props = defineProps<{
   tasks: Task[]
   dragEnabled: boolean
   dragging: boolean
+  loading: boolean
 }>()
 
 const emit = defineEmits<{
@@ -40,13 +42,19 @@ watch(
       <h2 class="column__title">{{ TASK_STATUS_LABELS[status] }}</h2>
       <span class="column__count">{{ tasks.length }}</span>
     </header>
+    <div v-if="loading" class="column__list" aria-hidden="true">
+      <BaseSkeleton v-for="row in 2" :key="row" height="58px" />
+    </div>
     <VueDraggable
+      v-else
       v-model="localTasks"
       group="tasks"
       class="column__list"
       ghost-class="card-ghost"
       drag-class="card-drag"
       :animation="220"
+      :delay="150"
+      :delay-on-touch-only="true"
       :disabled="!dragEnabled"
       @start="emit('dragstart')"
       @end="emit('dragend')"
@@ -63,7 +71,7 @@ watch(
         @click="emit('edit', task)"
       />
     </VueDraggable>
-    <p v-if="!tasks.length" class="column__empty">Перетягніть завдання сюди</p>
+    <p v-if="!loading && !tasks.length" class="column__empty">Перетягніть завдання сюди</p>
   </section>
 </template>
 
@@ -127,7 +135,9 @@ watch(
   }
 
   &__card {
-    touch-action: none;
+    // pan-y лишає вертикальний скрол на дотикових пристроях,
+    // перетягування стартує після утримання (delayOnTouchOnly)
+    touch-action: pan-y;
     animation: card-in $duration-base $ease-out both;
     animation-delay: min(calc(var(--i, 0) * 40ms), 240ms);
   }

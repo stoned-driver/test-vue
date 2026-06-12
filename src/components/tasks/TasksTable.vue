@@ -6,9 +6,9 @@ import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import { useColumnResize } from '@/composables/useColumnResize'
 import { useTableSort } from '@/composables/useTableSort'
 import { useTaskDrag } from '@/composables/useTaskDrag'
-import { TASK_STATUS_RANK, TaskStatus, type Task } from '@/types'
-import { formatDayMonth, isOverdue } from '@/utils/date'
-import { TASK_STATUS_LABELS } from '@/utils/labels'
+import { TASK_STATUS_RANK, type Task } from '@/types'
+import { formatDayMonth, isTaskOverdue } from '@/utils/date'
+import { TASK_STATUS_LABELS, initialsOf } from '@/utils/labels'
 
 const props = defineProps<{
   tasks: Task[]
@@ -43,7 +43,7 @@ const { sortState, sortedItems, toggleSort, sortDirection, ariaSort } = useTable
   },
 )
 
-const { isResizing, startResize, getWidthStyle } = useColumnResize('tasks', {
+const { isResizing, startResize, nudgeWidth, getWidthStyle } = useColumnResize('tasks', {
   id: 64,
   title: 320,
   assignee: 190,
@@ -66,18 +66,6 @@ watch(
   },
   { immediate: true },
 )
-
-function overdue(task: Task): boolean {
-  return task.status !== TaskStatus.Done && isOverdue(task.dueDate)
-}
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((word) => word.charAt(0).toUpperCase())
-    .join('')
-}
 </script>
 
 <template>
@@ -127,8 +115,11 @@ function initials(name: string): string {
               class="table__resize"
               role="separator"
               aria-orientation="vertical"
+              tabindex="0"
               :aria-label="`Змінити ширину колонки «${column.label}»`"
               @pointerdown="startResize(column.key, $event)"
+              @keydown.left.prevent="nudgeWidth(column.key, -16)"
+              @keydown.right.prevent="nudgeWidth(column.key, 16)"
             />
           </th>
         </tr>
@@ -159,6 +150,8 @@ function initials(name: string): string {
         handle=".table__grip"
         ghost-class="row-ghost"
         :animation="200"
+        :delay="150"
+        :delay-on-touch-only="true"
         :disabled="!canDrag"
         @start="onDragStart"
         @end="onDragEnd"
@@ -174,7 +167,7 @@ function initials(name: string): string {
           @click="emit('edit', task)"
           @keydown.enter="emit('edit', task)"
         >
-          <td class="table__handle">
+          <td class="table__handle" @click.stop>
             <span
               class="table__grip"
               :class="{ 'table__grip--disabled': !canDrag }"
@@ -198,7 +191,7 @@ function initials(name: string): string {
           <td class="table__title">{{ task.title }}</td>
           <td>
             <span v-if="task.assignee" class="table__assignee">
-              <span class="table__avatar">{{ initials(task.assignee) }}</span>
+              <span class="table__avatar">{{ initialsOf(task.assignee) }}</span>
               {{ task.assignee }}
             </span>
             <span v-else class="table__none">—</span>
@@ -206,7 +199,7 @@ function initials(name: string): string {
           <td>
             <BaseBadge :tone="task.status">{{ TASK_STATUS_LABELS[task.status] }}</BaseBadge>
           </td>
-          <td class="table__due" :class="{ 'table__due--overdue': overdue(task) }">
+          <td class="table__due" :class="{ 'table__due--overdue': isTaskOverdue(task) }">
             {{ formatDayMonth(task.dueDate) }}
           </td>
         </tr>
@@ -316,8 +309,13 @@ function initials(name: string): string {
       transition: background $duration-fast $ease-out;
     }
 
-    &:hover::after {
-      background: $color-accent;
+    &:focus-visible {
+      outline: none;
+    }
+
+    &:hover::after,
+    &:focus-visible::after {
+      background: $color-accent-strong;
     }
   }
 

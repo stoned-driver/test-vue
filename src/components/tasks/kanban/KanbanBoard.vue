@@ -6,6 +6,7 @@ import KanbanColumn from './KanbanColumn.vue'
 defineProps<{
   grouped: Record<TaskStatus, Task[]>
   dragEnabled: boolean
+  loading: boolean
 }>()
 
 const emit = defineEmits<{ edit: [task: Task] }>()
@@ -22,6 +23,7 @@ const { isDragging, onDragStart, onDragEnd, onBoardDrop } = useTaskDrag()
       :tasks="grouped[status]"
       :drag-enabled="dragEnabled"
       :dragging="isDragging"
+      :loading="loading"
       @dragstart="onDragStart"
       @dragend="onDragEnd"
       @drop="onBoardDrop"

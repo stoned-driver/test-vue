@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { TaskStatus, type Task } from '@/types'
 import { formatDayMonth, isOverdue } from '@/utils/date'
+import { initialsOf } from '@/utils/labels'
 
 const props = defineProps<{ task: Task }>()
 
@@ -9,18 +10,24 @@ const overdue = computed(
   () => props.task.status !== TaskStatus.Done && isOverdue(props.task.dueDate),
 )
 
-const initials = computed(() => {
-  if (!props.task.assignee) return null
-  return props.task.assignee
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((word) => word.charAt(0).toUpperCase())
-    .join('')
-})
+const initials = computed(() => (props.task.assignee ? initialsOf(props.task.assignee) : null))
+
+/** Клавіатурний еквівалент кліку: Enter/Space відкривають редагування */
+function activate(event: KeyboardEvent): void {
+  if (event.currentTarget instanceof HTMLElement) event.currentTarget.click()
+}
 </script>
 
 <template>
-  <article class="card" :class="{ 'card--done': task.status === 'done' }">
+  <article
+    class="card"
+    :class="{ 'card--done': task.status === 'done' }"
+    role="button"
+    tabindex="0"
+    :aria-label="`Редагувати завдання «${task.title}»`"
+    @keydown.enter.prevent="activate"
+    @keydown.space.prevent="activate"
+  >
     <h3 class="card__title">{{ task.title }}</h3>
     <div class="card__meta">
       <span class="card__id">#{{ task.id }}</span>
@@ -45,6 +52,7 @@ const initials = computed(() => {
   transition:
     box-shadow $duration-fast $ease-out,
     transform $duration-fast $ease-out;
+  @include focus-ring;
 
   &:hover {
     box-shadow: 0 3px 8px rgba(61, 54, 46, 0.09);

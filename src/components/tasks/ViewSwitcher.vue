@@ -10,15 +10,14 @@ const modes: { value: ProjectViewMode; label: string }[] = [
 </script>
 
 <template>
-  <div class="switcher" role="tablist" aria-label="Режим перегляду завдань">
+  <div class="switcher" role="group" aria-label="Режим перегляду завдань">
     <button
       v-for="mode in modes"
       :key="mode.value"
       type="button"
-      role="tab"
       class="switcher__option"
       :class="{ 'switcher__option--active': model === mode.value }"
-      :aria-selected="model === mode.value"
+      :aria-pressed="model === mode.value"
       @click="model = mode.value"
     >
       <svg v-if="mode.value === 'table'" viewBox="0 0 14 14" aria-hidden="true">
